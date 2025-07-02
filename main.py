@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Active WebSocket connections
+
 active_connections = {}
 
 @app.get("/", response_class=HTMLResponse)
@@ -129,7 +129,7 @@ async def notify_all_status():
         except:
             pass
 
-# Επιστροφή όλων των μηνυμάτων (και mark as read)
+
 @app.get("/messages/{sender}/{receiver}")
 def get_messages(sender: str, receiver: str, db: Session = Depends(get_db)):
     try:
@@ -156,10 +156,10 @@ def get_messages(sender: str, receiver: str, db: Session = Depends(get_db)):
         ]
 
     except Exception as e:
-        print(f"❌ Error in /messages/{sender}/{receiver}: {e}")
+        print(f" Error in /messages/{sender}/{receiver}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-# Νέα διαδρομή για unread counts
+#  για unread counts
 @app.get("/unread_counts/{username}")
 def get_unread_counts(username: str, db: Session = Depends(get_db)):
     counts = db.query(Message.sender, func.count(Message.id)).filter(

@@ -6,8 +6,7 @@ from models import SessionLocal
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")  # .env: postgresql://chatuser:admin123@localhost:5432/chatdb
-
+DATABASE_URL = os.getenv("DATABASE_URL")  # .env: 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()

@@ -18,7 +18,7 @@ app = FastAPI()
 # DB + Middleware setup
 models.Base.metadata.create_all(bind=models.engine)
 app.add_middleware(SessionMiddleware, secret_key=secrets.token_hex(16))
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
 templates = Jinja2Templates(directory="templates")
 
 app.add_middleware(

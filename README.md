@@ -57,35 +57,7 @@ kubectl get pods : και παρατηρούμε αν αυξάνονται τα 
 
 ##PostgreSQL DB: chatdb
 
-chatdb=> \d users
-                                        Table "public.users"
-   Column   |            Type             | Collation | Nullable |              Default
-------------+-----------------------------+-----------+----------+-----------------------------------
- id         | integer                     |           | not null | nextval('users_id_seq'::regclass)
- username   | character varying(50)       |           | not null |
- password   | text                        |           | not null |
- is_online  | boolean                     |           |          | false
- created_at | timestamp without time zone |           |          | CURRENT_TIMESTAMP
- 
-chatdb=> \d messages
-Column   |            Type             | Collation | Nullable |               Default
------------+-----------------------------+-----------+----------+--------------------------------------
- id        | integer                     |           | not null | nextval('messages_id_seq'::regclass)
- sender    | character varying           |           | not null |
- receiver  | character varying           |           | not null |
- content   | text                        |           | not null |
- timestamp | timestamp without time zone |           |          |
- read      | boolean                     |           |          | false 
-
- chatdb=> \d sessions
-                                        Table "public.sessions"
-   Column   |            Type             | Collation | Nullable |               Default
-------------+-----------------------------+-----------+----------+--------------------------------------
- id         | integer                     |           | not null | nextval('sessions_id_seq'::regclass)
- user_id    | integer                     |           |          |
- token      | text                        |           | not null |
- created_at | timestamp without time zone |           |          | CURRENT_TIMESTAMP
- expires_at | timestamp without time zone |           |          |
+![image](https://github.com/user-attachments/assets/08dd8e4f-aeef-47c7-b975-2816bc1043fe)
 
 
 

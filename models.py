@@ -10,7 +10,7 @@ SessionLocal = sessionmaker(bind=engine)
 
 Base = declarative_base()
 
-# Παράδειγμα μοντέλου
+
 class User(Base):
     __tablename__ = 'users'
 

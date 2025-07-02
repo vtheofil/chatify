@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chatify</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    body {
+      background: #f0f2f5;
+      font-family: "Segoe UI", sans-serif;
+    }
+    .chat-wrapper {
+      display: flex;
+      height: 90vh;
+      margin-top: 30px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      background: white;
+    }
+    .user-list {
+      width: 25%;
+      border-right: 1px solid #ddd;
+      background-color: #f8f9fa;
+      overflow-y: auto;
+    }
+    .chat-area {
+      width: 75%;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid #e0e0e0;
+      padding: 10px;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .chat-input {
+      display: flex;
+      margin-top: 15px;
+    }
+    .chat-input input {
+      flex: 1;
+      margin-right: 10px;
+    }
+    .message {
+      margin-bottom: 12px;
+    }
+    .from-me {
+      text-align: right;
+      color: #007bff;
+    }
+    .from-other {
+      text-align: left;
+      color: #28a745;
+    }
+    .timestamp {
+      display: block;
+      font-size: 0.75em;
+      color: #888;
+    }
+    .user-list-item {
+      padding: 12px 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #eaeaea;
+      transition: background 0.2s;
+    }
+    .user-list-item:hover {
+      background-color: #e9ecef;
+    }
+    .user-list-item.active {
+      background-color: #dee2e6;
+      font-weight: bold;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .online {
+      background-color: #28a745;
+    }
+    .offline {
+      background-color: #bbb;
+    }
+    .unread-badge {
+      background-color: red;
+      color: white;
+      font-size: 0.7em;
+      padding: 2px 6px;
+      border-radius: 12px;
+      margin-left: 6px;
+      display: none;
+    }
+    .top-bar {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .logout {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="top-bar">
+    <h3>Welcome, {{ username }}!</h3>
+  </div>
+
+  <div class="chat-wrapper">
+    <div class="user-list" id="userList">
+      {% for user in users %}
+        <div class="user-list-item" data-username="{{ user.username }}">
+          <div style="display: flex; align-items: center;">
+            <span class="status-dot offline" id="status-{{ user.username }}"></span>
+            {{ user.username }}
+          </div>
+          <span class="unread-badge" id="badge-{{ user.username }}">0</span>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="chat-area">
+      <div class="chat-messages" id="messages"></div>
+      <div class="chat-input">
+        <input type="text" id="messageInput" class="form-control" placeholder="Type your message...">
+        <button id="sendBtn" class="btn btn-primary">Send</button>
+      </div>
+      <div class="text-right logout">
+        <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const username = "{{ username }}";
+  let currentChat = null;
+  let ws = null;
+  const unreadCounts = {};
+
+  const messagesDiv = document.getElementById("messages");
+  const messageInput = document.getElementById("messageInput");
+  const sendBtn = document.getElementById("sendBtn");
+
+  function setupWebSocket() {
+    if (ws) ws.close();
+    ws = new WebSocket(`ws://${location.host}/ws/${username}`);
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "status_update") {
+        const onlineUsers = data.online;
+        document.querySelectorAll(".user-list-item").forEach(item => {
+          const u = item.dataset.username;
+          const dot = document.getElementById(`status-${u}`);
+          if (dot) {
+            dot.classList.remove("online", "offline");
+            dot.classList.add(onlineUsers.includes(u) ? "online" : "offline");
+          }
+        });
+        return;
+      }
+
+      if (data.type === "new_user") {
+        const newUser = data.username;
+        if (newUser === username) return;
+
+        const userList = document.getElementById("userList");
+        const userDiv = document.createElement("div");
+        userDiv.className = "user-list-item";
+        userDiv.dataset.username = newUser;
+        userDiv.innerHTML = `
+          <div style="display: flex; align-items: center;">
+            <span class="status-dot offline" id="status-${newUser}"></span>
+            ${newUser}
+          </div>
+          <span class="unread-badge" id="badge-${newUser}">0</span>
+        `;
+        userDiv.addEventListener("click", () => {
+          document.querySelectorAll(".user-list-item").forEach(i => i.classList.remove("active"));
+          userDiv.classList.add("active");
+          currentChat = newUser;
+          messagesDiv.innerHTML = "";
+          loadMessages(currentChat);
+          unreadCounts[newUser] = 0;
+          const badge = document.getElementById(`badge-${newUser}`);
+          if (badge) {
+            badge.innerText = "";
+            badge.style.display = "none";
+          }
+        });
+        userList.appendChild(userDiv);
+        return;
+      }
+
+      if ((data.from !== username) && data.from !== currentChat) {
+        unreadCounts[data.from] = (unreadCounts[data.from] || 0) + 1;
+        const badge = document.getElementById(`badge-${data.from}`);
+        if (badge) {
+          badge.innerText = unreadCounts[data.from];
+          badge.style.display = "inline-block";
+        }
+      }
+
+      if (data.from === currentChat || data.to === currentChat) {
+        addMessage(data.message, data.from === username ? 'from-me' : 'from-other', new Date().toLocaleTimeString());
+      }
+    };
+  }
+
+  sendBtn.addEventListener("click", () => {
+    const msg = messageInput.value.trim();
+    if (!currentChat || !msg || !ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ to: currentChat, message: msg }));
+    addMessage(msg, 'from-me', new Date().toLocaleTimeString());
+    messageInput.value = "";
+  });
+
+  function addMessage(text, cls, time) {
+    const div = document.createElement("div");
+    div.className = `message ${cls}`;
+    div.innerHTML = `${text}<span class="timestamp">${time}</span>`;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function loadMessages(user) {
+    if (!user) return;
+    fetch(`/messages/${username}/${user}`)
+      .then(res => res.json())
+      .then(data => {
+        messagesDiv.innerHTML = "";
+        data.forEach(msg => {
+          const cls = msg.sender === username ? 'from-me' : 'from-other';
+          const time = new Date(msg.timestamp).toLocaleTimeString();
+          addMessage(msg.content, cls, time);
+        });
+      })
+      .catch(err => {
+        messagesDiv.innerHTML = "<div class='text-danger'>Failed to load messages.</div>";
+      });
+  }
+
+  document.querySelectorAll(".user-list-item").forEach(item => {
+    item.addEventListener("click", () => {
+      const selectedUser = item.dataset.username;
+      document.querySelectorAll(".user-list-item").forEach(i => i.classList.remove("active"));
+      item.classList.add("active");
+      currentChat = selectedUser;
+      messagesDiv.innerHTML = "";
+      loadMessages(currentChat);
+      unreadCounts[selectedUser] = 0;
+      const badge = document.getElementById(`badge-${selectedUser}`);
+      if (badge) {
+        badge.innerText = "";
+        badge.style.display = "none";
+      }
+    });
+  });
+
+  fetch(`/unread_counts/${username}`)
+    .then(res => res.json())
+    .then(counts => {
+      for (const [sender, count] of Object.entries(counts)) {
+        unreadCounts[sender] = count;
+        const badge = document.getElementById(`badge-${sender}`);
+        if (badge) {
+          badge.innerText = count;
+          badge.style.display = "inline-block";
+        }
+      }
+    });
+
+  setupWebSocket();
+</script>
+</body>
+</html>

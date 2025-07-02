@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sign Up - Chatify</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .signup-box {
+      width: 100%;
+      max-width: 400px;
+      padding: 30px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="signup-box">
+    <h3 class="text-center mb-4">Create your <strong>Chatify</strong> account</h3>
+    <form method="post" action="/signup" onsubmit="return validatePassword()">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" class="form-control" required />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" name="password" class="form-control" required />
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="confirmPassword" class="form-control" required />
+      </div>
+      <button type="submit" class="btn btn-success btn-block">Sign Up</button>
+    </form>
+    <p class="text-center mt-3">Already have an account? <a href="/login">Login</a></p>
+  </div>
+
+  <script>
+    function validatePassword() {
+      const pw = document.getElementById("password").value;
+      const cpw = document.getElementById("confirmPassword").value;
+      if (pw !== cpw) {
+        alert("Passwords do not match!");
+        return false;
+      }
+      return true;
+    }
+  </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 # chatify
 Γενική Περιγραφή
 
-Το Chatify είναι ένα real-time chat app χχισμένη με FastAPI + WebSockets + PostgreSQL + Docker + Kubernetes. 
+Το Chatify είναι ένα real-time chat app χτισμένη με FastAPI + WebSockets + PostgreSQL + Docker + Kubernetes. 
 
 ##Λειτουργία:
 
